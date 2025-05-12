@@ -45,6 +45,12 @@ uniform float ACESN_Gamma <
 	ui_tooltip = "Most monitors/images use a value of 2.2. Setting this to 1 disables the pre-tonemapping degamma of the game image, causing a washed out effect.";
 > = 2.2;
 
+uniform bool IsScRGB <
+    ui_type = "checkbox";
+    ui_label = "Use scRGB";
+    ui_tooltip = "Enable this if the input is in scRGB (linear color space).";
+> = false;
+
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -55,24 +61,41 @@ uniform float ACESN_Gamma <
 //
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+float3 ConvertToLinear(float3 color)
+{
+    // Convert sRGB to linear
+    return pow(color, float3(2.2, 2.2, 2.2));
+}
+
+float3 ConvertToSRGB(float3 color)
+{
+    // Convert linear to sRGB
+    return pow(color, float3(1.0 / 2.2, 1.0 / 2.2, 1.0 / 2.2));
+}
+
 float3 aces_main_nark(float4 pos : SV_Position, float2 texcoord : TexCoord ) : COLOR
 {
-	float3 texColor = tex2D(ReShade::BackBuffer, texcoord ).rgb;
-	
-	// Do inital de-gamma of the game image to ensure we're operating in the correct colour range.
-	if( ACESN_Gamma > 1.00 )
-		texColor = pow(texColor,ACESN_Gamma);
-		
-	texColor *= ACESN_Exp;  // Exposure Adjustment
+    float3 texColor = tex2D(ReShade::BackBuffer, texcoord ).rgb;
 
-	// ACES
-	texColor = saturate((texColor*(ACESN_A*texColor+ACESN_B))/(texColor*(ACESN_C*texColor+ACESN_D)+ACESN_E));
-    
-	// Do the post-tonemapping gamma correction
-	if( ACESN_Gamma > 1.00 )
-		texColor = pow(texColor,1/ACESN_Gamma);
-	
-	return texColor;
+    // Convert to linear color space if input is sRGB
+    if (!IsScRGB)
+    {
+        texColor = ConvertToLinear(texColor);
+    }
+
+    // Apply exposure adjustment
+    texColor *= ACESN_Exp;
+
+    // ACES tone mapping
+    texColor = saturate((texColor * (ACESN_A * texColor + ACESN_B)) / (texColor * (ACESN_C * texColor + ACESN_D) + ACESN_E));
+
+    // Convert back to sRGB if needed
+    if (!IsScRGB)
+    {
+        texColor = ConvertToSRGB(texColor);
+    }
+
+    return texColor;
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
