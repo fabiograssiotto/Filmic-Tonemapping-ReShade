@@ -1,4 +1,6 @@
-# Code changed to allow for HDR color spaces. For now it supports scRGB on the Narkowicz shader.
+Code changed to allow for HDR color spaces. For now it supports scRGB and HDR10 PQ on the Narkowicz shader.
+
+This code is modified from https://github.com/Zackin5/Filmic-Tonemapping-ReShade.
 
 # Filmic-Tonemapping-ReShade
 Gamma-correct filmic tonemapping shaders for ReShade. Includes the Uncharted 2 tonemap, a simplified Haarm-Pieter Duiker and different variants on ACES and Reinhard implementations.
